@@ -57,7 +57,7 @@ const Header = () => {
             component={RouterLink} 
             to="/" 
             className={classes.icon}
-            aria-label="الصفحة الرئيسية"
+            aria-label="Home"
           >
             <MenuBookIcon />
           </IconButton>
@@ -67,7 +67,7 @@ const Header = () => {
             to="/" 
             className={classes.title}
           >
-            متصفح المخطوطات العربية
+            khazāʾin-browser
           </Typography>
         </div>
         
@@ -78,7 +78,7 @@ const Header = () => {
             className={classes.homeLink}
           >
             <HomeIcon className={classes.icon} />
-            {!isMobile && <Typography variant="body1">الرئيسية</Typography>}
+            {!isMobile && <Typography variant="body1">Home</Typography>}
           </Link>
         </Box>
       </Toolbar>
