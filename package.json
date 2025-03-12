@@ -29,7 +29,7 @@
   "build": "react-scripts build",
   "test": "react-scripts test",
   "eject": "react-scripts eject",
-  "cloudflare-build": "npm install --legacy-peer-deps && react-scripts build"
+"cloudflare-build": "CI=false npm install --legacy-peer-deps && CI=false react-scripts build"
 },
   "eslintConfig": {
     "extends": [
