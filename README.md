@@ -1,70 +1,97 @@
-# Getting Started with Create React App
+# متصفح المخطوطات العربية (Arabic Manuscript Browser)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This application allows you to browse, search, and filter a large collection of Arabic manuscript metadata. The application is designed to efficiently handle a large dataset by splitting it into manageable chunks.
 
-## Available Scripts
+## Project Structure
 
-In the project directory, you can run:
+The project consists of two main parts:
 
-### `npm start`
+1. **Data Processing Script**: Python script to process the original 50MB JSON file into more manageable CSV files.
+2. **React Application**: Web interface for browsing and searching the manuscript data.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Data Processing
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The Python script (`data-processing-script.py`) processes the original JSON data by:
 
-### `npm test`
+1. Extracting manuscript metadata from each page in the volumes
+2. Creating a main CSV file with manuscript details
+3. Creating chunked CSV files for manuscript locations based on ID ranges
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## React Application Features
 
-### `npm run build`
+- **Main Manuscript Browser**:
+  - Display manuscript data in a sortable, paginated table
+  - Search across all fields or limit to specific fields
+  - Filter by categories, century, death date, etc.
+  - Navigate to detailed view by clicking on a manuscript
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Manuscript Details View**:
+  - Display complete information about a single manuscript
+  - Show all locations where the manuscript is available
+  - Easy navigation back to the main browser
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Getting Started
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Prerequisites
 
-### `npm run eject`
+- Node.js (v14+)
+- Python 3.6+
+- Original manuscript data JSON file
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Data Processing
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. Place your original JSON file in the root directory and name it `manuscript_data.json`
+2. Run the Python script:
+   ```
+   python data-processing-script.py
+   ```
+3. This will create the processed CSV files in the `output` directory
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Running the React App
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+1. Install dependencies:
+   ```
+   cd manuscript-browser
+   npm install
+   ```
 
-## Learn More
+2. Copy the processed data to the public directory:
+   ```
+   mkdir -p public/data/chunks
+   cp ../output/manuscript_metadata.csv public/data/
+   cp ../output/chunks/* public/data/chunks/
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+3. Start the development server:
+   ```
+   npm start
+   ```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+4. Access the application at http://localhost:3000
 
-### Code Splitting
+## Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+To deploy this application as a static site:
 
-### Analyzing the Bundle Size
+1. Build the React application:
+   ```
+   npm run build
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+2. Copy the build directory to your web server
+3. Ensure the data files are accessible in the `data` directory
 
-### Making a Progressive Web App
+## Performance Considerations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- The application uses chunking to handle the large dataset efficiently
+- Data is loaded lazily - location data is only loaded when needed
+- Caching is implemented to prevent reloading data unnecessarily
+- Heavy operations like search and filtering are optimized for performance
 
-### Advanced Configuration
+## Future Improvements
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Add export functionality for search results
+- Implement advanced statistical analysis of the manuscript collection
+- Add visualization features (charts, maps) for the manuscript data
+- Improve mobile responsiveness
+- Add support for offline browsing
