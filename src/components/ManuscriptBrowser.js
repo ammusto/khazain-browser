@@ -4,7 +4,7 @@ import {
   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TextField, Button, Select, MenuItem, FormControl,
   InputLabel, Grid, Typography, IconButton, TablePagination,
-  Chip, Box, CircularProgress, Collapse, Card, CardContent,
+  Chip, Box, CircularProgress, Card, CardContent,
   Tooltip
 } from '@material-ui/core';
 import {
@@ -13,8 +13,6 @@ import {
   Clear as ClearIcon,
   ArrowUpward as SortUpIcon,
   ArrowDownward as SortDownIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
   OpenInNew as OpenInNewIcon
 } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
@@ -23,6 +21,9 @@ import { loadManuscriptData, searchManuscripts, getUniqueFieldValues } from '../
 const useStyles = makeStyles((theme) => ({
   root: {
     padding: theme.spacing(3),
+  },
+  button: {
+    textTransform: 'none', // Prevent uppercase text in buttons
   },
   searchBar: {
     marginBottom: theme.spacing(2),
@@ -41,7 +42,7 @@ const useStyles = makeStyles((theme) => ({
   table: {
     minWidth: 650,
     '& .MuiTableCell-root': {
-      fontSize: '1.25rem', // Increase font size from 0.75rem to 1.25rem
+      fontSize: '1.25rem',
     }
   },
   tableContainer: {
@@ -106,12 +107,12 @@ const useStyles = makeStyles((theme) => ({
 // Default columns for the manuscript table
 const defaultColumns = [
   {
-    Header: 'الرقم التسلسلي',
+    Header: 'ID',
     accessor: 'unique_id',
     width: '10%',
   },
   {
-    Header: 'الفن',
+    Header: 'Subject',
     accessor: 'categories',
     Cell: ({ value }) => (
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -123,7 +124,7 @@ const defaultColumns = [
     width: '15%',
   },
   {
-    Header: 'عنوان المخطوط',
+    Header: 'Manuscript Title',
     accessor: 'titles',
     Cell: ({ value }) => (
       <div>
@@ -135,12 +136,12 @@ const defaultColumns = [
     width: '25%',
   },
   {
-    Header: 'اسم المؤلف',
+    Header: 'Author',
     accessor: 'author',
     width: '20%',
   },
   {
-    Header: 'اسم الشهرة',
+    Header: 'Shuhra',
     accessor: 'shuhras',
     Cell: ({ value }) => (
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -152,17 +153,17 @@ const defaultColumns = [
     width: '15%',
   },
   {
-    Header: 'تاريخ الوفاة',
+    Header: 'Death Date',
     accessor: 'death_date',
     width: '10%',
   },
   {
-    Header: 'قرن الوفاة',
+    Header: 'Century',
     accessor: 'century',
     width: '5%',
   },
   {
-    Header: 'تفاصيل',
+    Header: 'Details',
     accessor: 'details',
     Cell: ({ row }) => (
       <ActionsCell manuscriptId={row.original.unique_id} />
@@ -184,7 +185,7 @@ const ActionsCell = ({ manuscriptId }) => {
 
   return (
     <div className={classes.detailsCell}>
-      <Tooltip title="عرض التفاصيل في نافذة جديدة" arrow>
+      <Tooltip title="View details in new window" arrow>
         <IconButton
           size="small"
           color="primary"
@@ -200,12 +201,12 @@ const ActionsCell = ({ manuscriptId }) => {
 
 // Available filter types
 const filterTypes = [
-  { id: 'categories', label: 'الفن' },
-  { id: 'century', label: 'قرن الوفاة' },
-  { id: 'death_date_range', label: 'نطاق تاريخ الوفاة' },
-  { id: 'author', label: 'اسم المؤلف' },
-  { id: 'shuhras', label: 'اسم الشهرة' },
-  { id: 'titles', label: 'عنوان المخطوط' }
+  { id: 'categories', label: 'Subject', useInput: true },
+  { id: 'century', label: 'Century', useInput: false },
+  { id: 'death_date_range', label: 'Death Date Range', useInput: true },
+  { id: 'author', label: 'Author', useInput: true },
+  { id: 'shuhras', label: 'Shuhra', useInput: true },
+  { id: 'titles', label: 'Manuscript Title', useInput: true }
 ];
 
 const ManuscriptBrowser = () => {
@@ -219,18 +220,13 @@ const ManuscriptBrowser = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [expandAdvancedFilters, setExpandAdvancedFilters] = useState(false);
 
   // Advanced filtering
   const [filters, setFilters] = useState([]);
   const [availableFilterTypes, setAvailableFilterTypes] = useState(filterTypes);
 
   // State for filter options
-  const [categoryOptions, setCategoryOptions] = useState([]);
   const [centuryOptions, setCenturyOptions] = useState([]);
-  const [authorOptions, setAuthorOptions] = useState([]);
-  const [shuhraOptions, setShuhraOptions] = useState([]);
-  const [titleOptions, setTitleOptions] = useState([]);
 
   // Load initial data
   useEffect(() => {
@@ -239,18 +235,9 @@ const ManuscriptBrowser = () => {
         const data = await loadManuscriptData();
         setManuscripts(data);
 
-        // Load filter options
-        const categories = await getUniqueFieldValues('categories');
+        // Load filter options (only for century which will still use dropdown)
         const centuries = await getUniqueFieldValues('century');
-        const authors = await getUniqueFieldValues('author');
-        const shuhras = await getUniqueFieldValues('shuhras');
-        const titles = await getUniqueFieldValues('titles');
-
-        setCategoryOptions(categories);
         setCenturyOptions(centuries);
-        setAuthorOptions(authors);
-        setShuhraOptions(shuhras);
-        setTitleOptions(titles);
 
         setLoading(false);
       } catch (error) {
@@ -399,6 +386,12 @@ const ManuscriptBrowser = () => {
 
     setLoading(false);
   };
+  
+  // Toggle filters visibility
+  const toggleFilters = () => {
+    const newShowFilters = !showFilters;
+    setShowFilters(newShowFilters);
+  };
 
   // Memoize the columns configuration
   const columns = useMemo(() => defaultColumns, []);
@@ -440,16 +433,8 @@ const ManuscriptBrowser = () => {
   // Get filter options based on filter type
   const getOptionsForFilter = (filterType) => {
     switch (filterType) {
-      case 'categories':
-        return categoryOptions;
       case 'century':
         return centuryOptions;
-      case 'author':
-        return authorOptions;
-      case 'shuhras':
-        return shuhraOptions;
-      case 'titles':
-        return titleOptions;
       default:
         return [];
     }
@@ -461,9 +446,16 @@ const ManuscriptBrowser = () => {
     return filter ? filter.label : filterType;
   };
 
+  // Check if filter should use input box instead of dropdown
+  const shouldUseInputForFilter = (filterType) => {
+    const filter = filterTypes.find(ft => ft.id === filterType);
+    return filter ? filter.useInput : false;
+  };
+
   // Render filter input based on filter type
   const renderFilterInput = (filter, index) => {
     const { type, value } = filter;
+    const useInputBox = shouldUseInputForFilter(type);
 
     if (type === 'death_date_range') {
       return (
@@ -472,7 +464,7 @@ const ManuscriptBrowser = () => {
             <TextField
               fullWidth
               variant="outlined"
-              label="من"
+              label="From"
               value={value.min}
               onChange={(e) => updateDateRangeFilter(index, 'min', e.target.value)}
               size="small"
@@ -482,7 +474,7 @@ const ManuscriptBrowser = () => {
             <TextField
               fullWidth
               variant="outlined"
-              label="إلى"
+              label="To"
               value={value.max}
               onChange={(e) => updateDateRangeFilter(index, 'max', e.target.value)}
               size="small"
@@ -490,39 +482,40 @@ const ManuscriptBrowser = () => {
           </Grid>
         </Grid>
       );
+    } else if (useInputBox) {
+      // Use text input for categories, authors, titles, and shuhras
+      return (
+        <TextField
+          fullWidth
+          variant="outlined"
+          label={getFilterLabel(type)}
+          value={value}
+          onChange={(e) => updateFilterValue(index, e.target.value)}
+          size="small"
+          placeholder={`Enter ${getFilterLabel(type).toLowerCase()}`}
+        />
+      );
     } else {
+      // Use dropdown for century and any other types that might still need it
       const options = getOptionsForFilter(type);
 
-      if (options.length > 0) {
-        return (
-          <FormControl variant="outlined" fullWidth size="small">
-            <InputLabel>{getFilterLabel(type)}</InputLabel>
-            <Select
-              value={value}
-              onChange={(e) => updateFilterValue(index, e.target.value)}
-              label={getFilterLabel(type)}
-            >
-              <MenuItem value="">
-                <em>الكل</em>
-              </MenuItem>
-              {options.map((option, i) => (
-                <MenuItem key={i} value={option}>{option}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        );
-      } else {
-        return (
-          <TextField
-            fullWidth
-            variant="outlined"
-            label={getFilterLabel(type)}
+      return (
+        <FormControl variant="outlined" fullWidth size="small">
+          <InputLabel>{getFilterLabel(type)}</InputLabel>
+          <Select
             value={value}
             onChange={(e) => updateFilterValue(index, e.target.value)}
-            size="small"
-          />
-        );
-      }
+            label={getFilterLabel(type)}
+          >
+            <MenuItem value="">
+              <em>All</em>
+            </MenuItem>
+            {options.map((option, i) => (
+              <MenuItem key={i} value={option}>{option}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      );
     }
   };
 
@@ -533,7 +526,7 @@ const ManuscriptBrowser = () => {
     return (
       <div className={classes.activeFiltersContainer}>
         <Typography variant="subtitle2" style={{ marginRight: '8px', marginTop: '4px' }}>
-          التصفيات النشطة:
+          Active Filters:
         </Typography>
         {filters.map((filter, index) => {
           let label = '';
@@ -542,14 +535,14 @@ const ManuscriptBrowser = () => {
             if (filter.value.min && filter.value.max) {
               label = `${getFilterLabel(filter.type)}: ${filter.value.min} - ${filter.value.max}`;
             } else if (filter.value.min) {
-              label = `${getFilterLabel(filter.type)}: من ${filter.value.min}`;
+              label = `${getFilterLabel(filter.type)}: from ${filter.value.min}`;
             } else if (filter.value.max) {
-              label = `${getFilterLabel(filter.type)}: إلى ${filter.value.max}`;
+              label = `${getFilterLabel(filter.type)}: to ${filter.value.max}`;
             } else {
               label = getFilterLabel(filter.type);
             }
           } else {
-            label = `${getFilterLabel(filter.type)}: ${filter.value || 'الكل'}`;
+            label = `${getFilterLabel(filter.type)}: ${filter.value || 'All'}`;
           }
 
           return (
@@ -567,9 +560,10 @@ const ManuscriptBrowser = () => {
           size="small"
           onClick={resetFilters}
           startIcon={<ClearIcon />}
+          className={classes.button}
           style={{ marginRight: '8px' }}
         >
-          إزالة الكل
+          Remove All
         </Button>
       </div>
     );
@@ -578,7 +572,7 @@ const ManuscriptBrowser = () => {
   return (
     <div className={classes.root}>
       <Typography variant="h4" gutterBottom>
-        فهرس المخطوطات
+        Manuscript Index
       </Typography>
 
       {/* Search Bar */}
@@ -588,7 +582,7 @@ const ManuscriptBrowser = () => {
             <TextField
               fullWidth
               variant="outlined"
-              label="بحث"
+              label="Search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -598,20 +592,20 @@ const ManuscriptBrowser = () => {
           </Grid>
           <Grid item xs={12} sm={3}>
             <FormControl variant="outlined" fullWidth>
-              <InputLabel>حقل البحث</InputLabel>
+              <InputLabel>Search Field</InputLabel>
               <Select
                 value={searchField}
                 onChange={(e) => setSearchField(e.target.value)}
-                label="حقل البحث"
+                label="Search Field"
               >
-                <MenuItem value="all">جميع الحقول</MenuItem>
-                <MenuItem value="unique_id">الرقم التسلسلي</MenuItem>
-                <MenuItem value="categories">الفن</MenuItem>
-                <MenuItem value="titles">عنوان المخطوط</MenuItem>
-                <MenuItem value="author">اسم المؤلف</MenuItem>
-                <MenuItem value="shuhras">اسم الشهرة</MenuItem>
-                <MenuItem value="death_date">تاريخ الوفاة</MenuItem>
-                <MenuItem value="century">قرن الوفاة</MenuItem>
+                <MenuItem value="all">All Fields</MenuItem>
+                <MenuItem value="unique_id">ID</MenuItem>
+                <MenuItem value="categories">Subject</MenuItem>
+                <MenuItem value="titles">Manuscript Title</MenuItem>
+                <MenuItem value="author">Author</MenuItem>
+                <MenuItem value="shuhras">Shuhra</MenuItem>
+                <MenuItem value="death_date">Death Date</MenuItem>
+                <MenuItem value="century">Century</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -620,24 +614,27 @@ const ManuscriptBrowser = () => {
               variant="contained"
               color="primary"
               onClick={handleSearch}
+              className={classes.button}
               style={{ marginRight: 8 }}
             >
-              بحث
+              Search
             </Button>
             <Button
               variant="outlined"
               startIcon={<FilterIcon />}
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={toggleFilters}
+              className={classes.button}
               style={{ marginRight: 8 }}
             >
-              {showFilters ? 'إخفاء التصفية' : 'إظهار التصفية'}
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
             </Button>
             <Button
               variant="outlined"
               startIcon={<ClearIcon />}
               onClick={resetFilters}
+              className={classes.button}
             >
-              إعادة تعيين
+              Reset
             </Button>
           </Grid>
         </Grid>
@@ -649,16 +646,11 @@ const ManuscriptBrowser = () => {
       {/* Advanced Filters Section */}
       {showFilters && (
         <Paper className={classes.filterSection} elevation={2}>
-          <Box display="flex" alignItems="center" onClick={() => setExpandAdvancedFilters(!expandAdvancedFilters)} style={{ cursor: 'pointer' }}>
-            <IconButton className={classes.expandButton} size="small">
-              {expandAdvancedFilters ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
+          <Box display="flex" alignItems="center" style={{ marginBottom: '12px' }}>
             <Typography variant="subtitle1">
-              التصفية المتقدمة
+              Advanced Filters
             </Typography>
           </Box>
-
-          <Collapse in={expandAdvancedFilters}>
             <Box mt={2}>
               {/* Current Filters */}
               {filters.map((filter, index) => (
@@ -675,8 +667,9 @@ const ManuscriptBrowser = () => {
                           onClick={() => removeFilter(index)}
                           size="small"
                           fullWidth
+                          className={classes.button}
                         >
-                          إزالة
+                          Remove
                         </Button>
                       </Grid>
                     </Grid>
@@ -690,7 +683,7 @@ const ManuscriptBrowser = () => {
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={8}>
                       <FormControl variant="outlined" fullWidth size="small">
-                        <InputLabel>إضافة تصفية</InputLabel>
+                        <InputLabel>Add Filter</InputLabel>
                         <Select
                           value=""
                           onChange={(e) => {
@@ -699,10 +692,10 @@ const ManuscriptBrowser = () => {
                               e.target.value = '';
                             }
                           }}
-                          label="إضافة تصفية"
+                          label="Add Filter"
                         >
                           <MenuItem value="">
-                            <em>اختر نوع التصفية</em>
+                            <em>Select filter type</em>
                           </MenuItem>
                           {availableFilterTypes.map((filterType, index) => (
                             <MenuItem key={index} value={filterType.id}>{filterType.label}</MenuItem>
@@ -710,21 +703,11 @@ const ManuscriptBrowser = () => {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={4}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={applyFilters}
-                        fullWidth
-                      >
-                        تطبيق التصفيات
-                      </Button>
-                    </Grid>
+
                   </Grid>
                 </Box>
               )}
             </Box>
-          </Collapse>
         </Paper>
       )}
 
@@ -738,7 +721,7 @@ const ManuscriptBrowser = () => {
           {/* Results Count */}
           <Box my={2}>
             <Typography variant="subtitle1">
-              {manuscripts.length} مخطوطة
+              {manuscripts.length} manuscripts
             </Typography>
           </Box>
 
@@ -798,8 +781,8 @@ const ManuscriptBrowser = () => {
             onRowsPerPageChange={(event) => {
               setPageSize(Number(event.target.value));
             }}
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} من ${count}`}
-            labelRowsPerPage="صفوف في الصفحة:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+            labelRowsPerPage="Rows per page:"
           />
         </>
       )}
